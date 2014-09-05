@@ -2,6 +2,10 @@ class Timeslot < ActiveRecord::Base
   has_many :boats, through: :assignments
   has_many :bookings
 
+  def self.all_during_date(date)
+    Timeslot.all.select{|timeslot| Time.at(timeslot.start_time).to_date === date}
+  end
+
   def book(party_size)
     # check if we have availability
     # look at bookings and do best fit
