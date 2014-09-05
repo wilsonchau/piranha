@@ -1,4 +1,5 @@
 class Timeslot < ActiveRecord::Base
+  has_many :assignments
   has_many :boats, through: :assignments
   has_many :bookings
 
@@ -6,22 +7,28 @@ class Timeslot < ActiveRecord::Base
     Timeslot.all.select{|timeslot| Time.at(timeslot.start_time).to_date === date}
   end
 
-  def book(party_size)
-    # check if we have availability
-    # look at bookings and do best fit
-    # update availability if we used biggest boat
-    # update customer count if we decide to hold bookings
-    # only when we book do we make a boat unavailable
+  def as_json
+    super(include: :boats).merge(availability: availability, customer_count: customer_count)
   end
 
-  def as_json
+  def can_accomodate?(party_size)
+    # check if we have availability
+      # may need to do this check after shuffling people around for bookings to do best fit
+
+    # need to do best fit everytime in case we add new boats or bookings change
+    # look at bookings and do best fit
+      # hard part
+
+    # update availability if we used biggest boat
   end
 
   def availability
-    # based on largest boat capacity
+    boats.map(&:size).max
+    # more complicated since biggest boat may have people on it already
+      # easier if we store occupied spaces on assignments model
   end
 
   def customer_count
-    # bookings will change this number
+    bookings.map(&:size).sum
   end
 end

@@ -1,8 +1,10 @@
 class Booking < ActiveRecord::Base
   belongs_to :timeslot
 
+  validate :timeslot_can_accomodate
+
   private
-  def valid_booking
-    # check to see if we have available boat for booking
+  def timeslot_can_accomodate
+    timeslot.can_accomodate?(size)
   end
 end
