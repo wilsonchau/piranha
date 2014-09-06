@@ -11,15 +11,9 @@ class Timeslot < ActiveRecord::Base
     super(include: :boats).merge(availability: availability, customer_count: customer_count)
   end
 
-  def can_accomodate?(party_size)
-    # check if we have availability
-    return true if availability >= party_size
-
-    # if not then try to redo fit with new booking
-    booking_sizes = (bookings.map(&:size) << party_size)
-    return false unless availability(booking_sizes) > 0
-
-    true
+  def can_accomodate?(group_size)
+    booking_sizes = bookings.map(&:size) << group_size
+    availability(booking_sizes)
   end
 
   def availability(booking_sizes = bookings.map(&:size))
@@ -29,7 +23,7 @@ class Timeslot < ActiveRecord::Base
     # fit biggest bookings first to boats with smallest possible remaining capacity
     booking_sizes.sort.reverse.each do |group_size|
       capacity_index = boat_capacities.index{|capacity| capacity >= group_size}
-      return 0 unless capacity_index
+      return false unless capacity_index
 
       boat_capacities[capacity_index] -= group_size
       boat_capacities.sort!

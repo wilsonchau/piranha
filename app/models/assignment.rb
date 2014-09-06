@@ -9,6 +9,7 @@ class Assignment < ActiveRecord::Base
     all_assignments = Assignment.where(boat_id: self.boat_id)
     assignment_time_ranges = all_assignments.map(&:timeslot).map{|ts| ts.start_time..ts.start_time+ts.duration}
 
-    assignment_time_ranges.map{|range| !range.include?(timeslot.start_time) && !range.include?(timeslot.start_time+timeslot.duration)}.all?
+    available = assignment_time_ranges.map{|range| !range.include?(timeslot.start_time) && !range.include?(timeslot.start_time+timeslot.duration)}.all?
+    errors.add(:boat, "not available") unless available
   end
 end

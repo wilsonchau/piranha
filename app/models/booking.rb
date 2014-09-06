@@ -5,6 +5,6 @@ class Booking < ActiveRecord::Base
 
   private
   def timeslot_can_accomodate
-    timeslot.can_accomodate?(size)
+    errors.add(:timeslot, "cannot accomodate booking") unless timeslot.can_accomodate?(size)
   end
 end
