@@ -1,4 +1,4 @@
-class TimeslotsController < ApplicationController
+class Api::TimeslotsController < ApplicationController
   def index
     timeslot_params = params.permit(:date)
     date = Date.parse(timeslot_params[:date])

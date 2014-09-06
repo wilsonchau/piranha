@@ -1,4 +1,4 @@
-class BookingsController < ApplicationController
+class Api::BookingsController < ApplicationController
   def create
     booking_params = params.permit(:timeslot_id, :size)
 

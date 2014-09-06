@@ -53,4 +53,10 @@ Rails.application.routes.draw do
   #     # (app/controllers/admin/products_controller.rb)
   #     resources :products
   #   end
+  namespace :api do
+    resources :timeslots, only: [:index, :create]
+    resources :boats, only: [:index, :create]
+    resources :assignments, only: [:create]
+    resources :bookings, only: [:create]
+  end
 end
