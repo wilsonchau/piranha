@@ -13,35 +13,29 @@ class Timeslot < ActiveRecord::Base
 
   def can_accomodate?(party_size)
     # check if we have availability
-    return true if party_size >= availability
+    return true if availability >= party_size
 
     # if not then try to redo fit with new booking
-    boat_capacities = boats.map(&:size).sort
-    booking_groups = (bookings.map(&:size) << party_size).sort
-
-    # try to fit group onto boat with smallest capacity left that will fit group
-    booking_groups.each do |group_size|
-      capacity_index = boat_capacities.index{|capacity| capacity >= group_size}
-      return false unless capacity_index
-
-      boat_capacities[capacity_index] -= group_size
-      boat_capacities.sort!
-    end
+    booking_sizes = (bookings.map(&:size) << party_size)
+    return false unless availability(booking_sizes) > 0
 
     true
   end
 
-  def update_availability
-    boat_capacities = boats.map(&:size).sort
-    booking_groups = bookings.map(&:size).sort
+  def availability(booking_sizes = bookings.map(&:size))
+    boat_capacities = boats.map(&:capacity).sort
+    return 0 if boat_capacities.empty?
 
-    booking_groups.each do |group_size|
+    # fit biggest bookings first to boats with smallest possible remaining capacity
+    booking_sizes.sort.reverse.each do |group_size|
       capacity_index = boat_capacities.index{|capacity| capacity >= group_size}
+      return 0 unless capacity_index
+
       boat_capacities[capacity_index] -= group_size
       boat_capacities.sort!
     end
 
-    update_attribute(:availability, boat_capacities.max)
+    boat_capacities.max
   end
 
   def customer_count
