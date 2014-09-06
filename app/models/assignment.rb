@@ -3,9 +3,7 @@ class Assignment < ActiveRecord::Base
   belongs_to :boat
 
   validate :boat_available
-
-  # possibly hold how many people current on this boat
-  # or dynamically calculate the fit everytime
+  after_save :update_timeslot_availability
 
   private
   def boat_available
@@ -13,5 +11,9 @@ class Assignment < ActiveRecord::Base
     assignment_time_ranges = all_assignments.map(&:timeslot).map{|ts| ts.start_time..ts.start_time+ts.duration}
 
     assignment_time_ranges.map{|range| !range.include?(timeslot.start_time) && !range.include?(timeslot.start_time+timeslot.duration)}.all?
+  end
+
+  def update_timeslot_availability
+    timeslot.update_availability
   end
 end

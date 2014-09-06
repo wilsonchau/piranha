@@ -13,19 +13,35 @@ class Timeslot < ActiveRecord::Base
 
   def can_accomodate?(party_size)
     # check if we have availability
-      # may need to do this check after shuffling people around for bookings to do best fit
+    return true if party_size >= availability
 
-    # need to do best fit everytime in case we add new boats or bookings change
-    # look at bookings and do best fit
-      # hard part
+    # if not then try to redo fit with new booking
+    boat_capacities = boats.map(&:size).sort
+    booking_groups = (bookings.map(&:size) << party_size).sort
 
-    # update availability if we used biggest boat
+    # try to fit group onto boat with smallest capacity left that will fit group
+    booking_groups.each do |group_size|
+      capacity_index = boat_capacities.index{|capacity| capacity >= group_size}
+      return false unless capacity_index
+
+      boat_capacities[capacity_index] -= group_size
+      boat_capacities.sort!
+    end
+
+    true
   end
 
-  def availability
-    boats.map(&:size).max
-    # more complicated since biggest boat may have people on it already
-      # easier if we store occupied spaces on assignments model
+  def update_availability
+    boat_capacities = boats.map(&:size).sort
+    booking_groups = bookings.map(&:size).sort
+
+    booking_groups.each do |group_size|
+      capacity_index = boat_capacities.index{|capacity| capacity >= group_size}
+      boat_capacities[capacity_index] -= group_size
+      boat_capacities.sort!
+    end
+
+    update_attribute(:availability, boat_capacities.max)
   end
 
   def customer_count
