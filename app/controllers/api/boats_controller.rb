@@ -4,7 +4,7 @@ class Api::BoatsController < ApplicationController
   end
 
   def create
-    boat_params = params.permit(:name, :size)
+    boat_params = params.require(:boat).permit(:name, :capacity)
 
     render json: Boat.create(boat_params)
   end
