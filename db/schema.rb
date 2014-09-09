@@ -11,15 +11,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140909025308) do
+ActiveRecord::Schema.define(version: 20140905065522) do
 
   create_table "assignments", force: true do |t|
     t.integer  "timeslot_id"
     t.integer  "boat_id"
+    t.integer  "booked_timeslot_id"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "booked_timeslot_id"
   end
+
+  add_index "assignments", ["timeslot_id", "boat_id"], name: "index_assignments_on_timeslot_id_and_boat_id", unique: true
 
   create_table "boats", force: true do |t|
     t.integer  "capacity"

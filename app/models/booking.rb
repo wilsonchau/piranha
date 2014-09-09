@@ -1,10 +1,10 @@
 class Booking < ActiveRecord::Base
   belongs_to :timeslot
 
-  before_save :book
+  validate :booked
 
   private
-  def book
+  def booked
     errors.add(:timeslot, "cannot accomodate booking") unless timeslot.book(self.size)
   end
 end

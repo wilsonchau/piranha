@@ -11,48 +11,44 @@ class Timeslot < ActiveRecord::Base
     super.merge(availability: availability, customer_count: customer_count, boats: boats.map(&:id))
   end
 
-  def can_accomodate?(group_size)
-    booking_sizes = bookings.map(&:size) << group_size
-    availability(booking_sizes)
-  end
-
-  def availability(booking_sizes = bookings.map(&:size))
-    boat_capacities = assignments.available_to(self.id).map{|assignment| assignment.boat.capacity}
-    return 0 if boat_capacities.empty?
-
-    # fit biggest bookings first to boats with smallest possible remaining capacity
-    booking_sizes.sort.reverse.each do |group_size|
-      capacity_index = boat_capacities.index{|capacity| capacity >= group_size}
-      return false unless capacity_index
-
-      boat_capacities[capacity_index] -= group_size
-      boat_capacities.sort!
-    end
-
-    boat_capacities.max
-  end
-
   def book(size)
     available_assignments = assignments.available_to(self.id).inject({}) {|hash, assignment| hash[assignment.id] = assignment.boat.capacity; hash}.sort_by{|k,v| v}
-    return 0 if available_assignments.empty?
+    return false if available_assignments.empty?
 
     # unbook all assignments so that we can try to refit
     Assignment.where(booked_timeslot_id: self.id).map{|a| a.update_attributes(booked_timeslot_id: nil)}
 
+    assignments_to_book = []
     # fit biggest bookings first to boats with smallest possible remaining capacity
     booking_sizes = bookings.map(&:size) << size
     booking_sizes.sort.reverse.each do |group_size|
-      capacity_index = available_assignments.find_index{|id, capacity| capacity >= group_size}
-      return false unless capacity_index
+      assignment_index = available_assignments.find_index{|id, capacity| capacity >= group_size}
+      return false unless assignment_index
 
-      available_assignments[capacity_index][1] -= group_size
+      available_assignments[assignment_index][1] -= group_size
 
-      # book assignments again
-      assignment = assignments.find(available_assignments[capacity_index][0])
-      (assignment.overlapping_assignments << assignment).map{|a| a.update_attributes(booked_timeslot_id: self.id)}
+      assignment = assignments.find(available_assignments[assignment_index][0])
+      assignments_to_book << assignment << assignment.overlapping_assignments
 
-      available_assignments.sort_by{|k,v| v}
+      available_assignments = available_assignments.sort_by{|k,v| v}
     end
+    assignments_to_book.flatten.uniq.map{|a| a.book(self.id) }
+  end
+
+  def availability
+    boat_capacities = assignments.available_to(self.id).map{|assignment| assignment.boat.capacity}.sort
+    return 0 if boat_capacities.empty?
+
+    # fit biggest bookings first to boats with smallest possible remaining capacity
+    bookings.map(&:size).sort.reverse.each do |group_size|
+      assignment_index = boat_capacities.index{|capacity| capacity >= group_size}
+      return 0 unless assignment_index
+
+      boat_capacities[assignment_index] -= group_size
+      boat_capacities.sort!
+    end
+
+    boat_capacities.max
   end
 
   def customer_count
